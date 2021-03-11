@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
+import 'dart:io';
+import 'dart:convert'; // http -> json
 
 void main() {
   runApp(MyApp());
+}
+
+// Issuesを取得 List?
+Future<dynamic> fetchIssues() async {
+  var url = Uri.https('api.github.com', 'repos/flutter/flutter/issues');
+  final response = await http.get(url);
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
+  } else {
+    // エラー
+    throw Exception('Failed to load album');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -40,12 +56,14 @@ class _MyHomePageState extends State<MyHomePage>
   ];
 
   TabController _tabController;
+  Future<dynamic> _issues;
 
   // TabControllerの初期化
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: tabs.length, vsync: this);
+    _issues = fetchIssues();
   }
 
   @override
@@ -61,18 +79,33 @@ class _MyHomePageState extends State<MyHomePage>
             labelStyle: TextStyle(fontSize: 16.0),
             indicatorWeight: 2,
           )),
-      body: TabBarView(
-        controller: _tabController,
-        children: tabs.map((tab) {
-          return _createTab(tab);
-        }).toList(),
+      body: Center(
+        child: FutureBuilder<dynamic>(
+          future: _issues,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(snapshot.data[0]);
+            } else if (snapshot.hasError) {
+              return Text("${snapshot.error}");
+            }
+            return CircularProgressIndicator();
+          },
+        ),
       ),
     );
   }
 
   Widget _createTab(Tab tab) {
-    return Center(
-      child: Text('test'),
+    return FutureBuilder<dynamic>(
+      future: _issues,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Text(snapshot.data.title);
+        } else if (snapshot.hasError) {
+          return Text("${snapshot.error}");
+        }
+        return CircularProgressIndicator();
+      },
     );
   }
 }
