@@ -9,8 +9,9 @@ void main() {
 }
 
 // Issuesを取得 List?
-Future<dynamic> fetchIssues() async {
-  var url = Uri.https('api.github.com', 'repos/flutter/flutter/issues');
+Future<dynamic> fetchIssues(String query) async {
+  var url = Uri.https(
+      'api.github.com', 'repos/flutter/flutter/issues', {'labels': query});
   final response = await http.get(url);
   if (response.statusCode == 200) {
     return json.decode(response.body);
@@ -63,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: tabs.length, vsync: this);
-    _issues = fetchIssues();
+    _issues = fetchIssues('p: webview');
   }
 
   @override
@@ -80,11 +81,23 @@ class _MyHomePageState extends State<MyHomePage>
             indicatorWeight: 2,
           )),
       body: Center(
+        // 非同期で取得したissuesのビルダー
         child: FutureBuilder<dynamic>(
           future: _issues,
           builder: (context, snapshot) {
+            // 取得判定
             if (snapshot.hasData) {
-              return Text(snapshot.data[0]);
+              // リストビューでアイテムを表示
+              return ListView.builder(
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    // 各アイテムはカードで表示
+                    child: _createIssueCard(snapshot.data[index]),
+                  );
+                },
+                itemCount: snapshot.data.length,
+              );
             } else if (snapshot.hasError) {
               return Text("${snapshot.error}");
             }
@@ -106,6 +119,84 @@ class _MyHomePageState extends State<MyHomePage>
         }
         return CircularProgressIndicator();
       },
+    );
+  }
+
+  // issueのstateによって返すアイコンを切り替える
+  Icon _switchIssueIcon(String state) {
+    if (state == 'open') {
+      return Icon(
+        Icons.info_outline,
+        color: Colors.green,
+      );
+    } else if (state == 'close') {
+      return Icon(
+        Icons.check_circle_outline,
+        color: Colors.red,
+      );
+    } else {
+      return Icon(
+        Icons.help_outline,
+        color: Colors.blue,
+      );
+    }
+  }
+
+  // issueを表示するウィジェット
+  Widget _createIssueCard(Map params) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            // issueナンバーとコメント数
+            Row(
+              children: [
+                Text('No.' + params['number'].toString()),
+                SizedBox(width: 20), // 余白用
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Icon(Icons.comment),
+                    Text(params['comments'].toString()),
+                  ],
+                ),
+              ],
+            ),
+            // 状態アイコンとタイトル
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  _switchIssueIcon(params['state']),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Flexible(
+                    child: Container(
+                      width: double.infinity,
+                      child: Text(
+                        params['title'],
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 作成者
+            Wrap(
+              children: [
+                Text('created by ' + params['user']['login']),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
