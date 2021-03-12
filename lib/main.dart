@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'dart:io';
 import 'dart:convert'; // http -> json
 
 void main() {
@@ -44,50 +43,123 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage>
-    with SingleTickerProviderStateMixin {
-  // Tabウィジェットのリスト
-  final List<Tab> tabs = <Tab>[
-    Tab(text: '全て'),
-    Tab(text: 'p: webview'),
-    Tab(text: 'p: shared_preferences'),
-    Tab(text: 'waiting for customer response'),
-    Tab(text: 'severe: new feature'),
-    Tab(text: 'p: share'),
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
+  // 各種コントローラー
+  TabController _tabController;
+  TextEditingController _textEditingController;
+
+  // 初期のタブバー (タイトル)
+  List<String> _titles = [
+    '全て',
+    'p: webview',
+    'p: shared_preferences',
+    'waiting for customer response',
+    'severe: new feature',
+    'p: share',
   ];
 
-  TabController _tabController;
+  // タブタイトルに相当するクエリー
+  List<String> _queries = [
+    '',
+    'p: webview',
+    'p: shared_preferences',
+    'waiting for customer response',
+    'severe: new feature',
+    'p: share',
+  ];
 
-  // TabControllerの初期化
+  // コントローラーと各種リストを更新
+  void _addTab(String label) {
+    setState(() {
+      _titles.add(label);
+      _queries.add(label);
+      _tabController = _createNewTabController();
+      _textEditingController = TextEditingController();
+    });
+  }
+
+  // コントローラの設定用
+  TabController _createNewTabController() => TabController(
+        vsync: this,
+        length: _titles.length,
+      );
+
+  // 各種の初期化
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: tabs.length, vsync: this);
+    _tabController = TabController(length: _titles.length, vsync: this);
+    _textEditingController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _textEditingController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text(widget.title),
-          bottom: TabBar(
-            tabs: tabs,
-            controller: _tabController,
-            isScrollable: true,
-            unselectedLabelStyle: TextStyle(fontSize: 12.0),
-            labelStyle: TextStyle(fontSize: 16.0),
-            indicatorWeight: 2,
-          )),
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text('新しいラベルを入力してください'),
+                    content: TextField(
+                      controller: _textEditingController,
+                    ),
+                    actions: [
+                      TextButton(
+                        child: Text('キャンセル'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      TextButton(
+                        child: Text('追加'),
+                        onPressed: () {
+                          String label = _textEditingController.text;
+                          _addTab(label);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
+        // ラベル追加ボタン
+
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: _titles
+              .map(
+                (t) => Tab(text: t),
+              )
+              .toList(),
+          isScrollable: true,
+          unselectedLabelStyle: TextStyle(fontSize: 12.0),
+          labelStyle: TextStyle(fontSize: 16.0),
+          indicatorWeight: 2,
+        ),
+      ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          TabPage(query: ''),
-          TabPage(query: 'p: webview'),
-          TabPage(query: 'p: shared_preferences'),
-          TabPage(query: 'waiting for customer response'),
-          TabPage(query: 'severe: new feature'),
-          TabPage(query: 'p: share'),
-        ],
+        children: _queries
+            .map(
+              (q) => TabPage(query: q),
+            )
+            .toList(),
       ),
     );
   }
