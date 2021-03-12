@@ -70,6 +70,20 @@ class _MyHomePageState extends State<MyHomePage>
     return Scaffold(
       appBar: AppBar(
           title: Text(widget.title),
+          actions: [
+            // ラベル追加ボタン
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return TextFieldDialog();
+                  },
+                );
+              },
+            ),
+          ],
           bottom: TabBar(
             tabs: tabs,
             controller: _tabController,
@@ -220,6 +234,35 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
           ],
         ),
       ),
+    );
+  }
+}
+
+class TextFieldDialog extends StatefulWidget {
+  @override
+  _TextFieldDialogState createState() => _TextFieldDialogState();
+}
+
+class _TextFieldDialogState extends State<TextFieldDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('新しいラベルを入力してください'),
+      content: TextField(),
+      actions: [
+        TextButton(
+          child: Text('キャンセル'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        TextButton(
+          child: Text('追加'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
     );
   }
 }
