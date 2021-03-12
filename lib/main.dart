@@ -57,14 +57,12 @@ class _MyHomePageState extends State<MyHomePage>
   ];
 
   TabController _tabController;
-  Future<dynamic> _issues;
 
   // TabControllerの初期化
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: tabs.length, vsync: this);
-    _issues = fetchIssues('p: webview');
   }
 
   @override
@@ -80,40 +78,62 @@ class _MyHomePageState extends State<MyHomePage>
             labelStyle: TextStyle(fontSize: 16.0),
             indicatorWeight: 2,
           )),
-      body: Center(
-        // 非同期で取得したissuesのビルダー
-        child: FutureBuilder<dynamic>(
-          future: _issues,
-          builder: (context, snapshot) {
-            // 取得判定
-            if (snapshot.hasData) {
-              // リストビューでアイテムを表示
-              return ListView.builder(
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    // 各アイテムはカードで表示
-                    child: _createIssueCard(snapshot.data[index]),
-                  );
-                },
-                itemCount: snapshot.data.length,
-              );
-            } else if (snapshot.hasError) {
-              return Text("${snapshot.error}");
-            }
-            return CircularProgressIndicator();
-          },
-        ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          TabPage(query: ''),
+          TabPage(query: 'p: webview'),
+          TabPage(query: 'p: shared_preferences'),
+          TabPage(query: 'waiting for customer response'),
+          TabPage(query: 'severe: new feature'),
+          TabPage(query: 'p: share'),
+        ],
       ),
     );
   }
+}
 
-  Widget _createTab(Tab tab) {
+// タブの中身
+class TabPage extends StatefulWidget {
+  final String query;
+
+  const TabPage({
+    Key key,
+    @required this.query,
+  }) : super(key: key);
+
+  @override
+  _TabPageState createState() => _TabPageState();
+}
+
+class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
+  Future<dynamic> _issues;
+
+  @override
+  void initState() {
+    super.initState();
+    _issues = fetchIssues(widget.query);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     return FutureBuilder<dynamic>(
       future: _issues,
       builder: (context, snapshot) {
+        // 取得判定
         if (snapshot.hasData) {
-          return Text(snapshot.data.title);
+          // リストビューでアイテムを表示
+          return ListView.builder(
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                // 各アイテムはカードで表示
+                child: _createIssueCard(snapshot.data[index]),
+              );
+            },
+            itemCount: snapshot.data.length,
+          );
         } else if (snapshot.hasError) {
           return Text("${snapshot.error}");
         }
@@ -121,6 +141,9 @@ class _MyHomePageState extends State<MyHomePage>
       },
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 
   // issueのstateによって返すアイコンを切り替える
   Icon _switchIssueIcon(String state) {
