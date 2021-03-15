@@ -9,8 +9,11 @@ void main() {
 
 // Issuesを取得 List?
 Future<dynamic> fetchIssues(String query) async {
-  var url = Uri.https(
-      'api.github.com', 'repos/flutter/flutter/issues', {'labels': query});
+  // リクエストポイント
+  var url = Uri.https('api.github.com', 'repos/flutter/flutter/issues', {
+    'labels': query,
+    'state': 'all',
+  });
   final response = await http.get(url);
   if (response.statusCode == 200) {
     return json.decode(response.body);
@@ -224,7 +227,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
         Icons.info_outline,
         color: Colors.green,
       );
-    } else if (state == 'close') {
+    } else if (state == 'closed') {
       return Icon(
         Icons.check_circle_outline,
         color: Colors.red,
