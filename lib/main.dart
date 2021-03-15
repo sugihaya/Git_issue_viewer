@@ -15,10 +15,10 @@ Future<dynamic> fetchIssues(String query) async {
     'state': 'all',
   });
   final response = await http.get(url);
+  // エラーチェック
   if (response.statusCode == 200) {
     return json.decode(response.body);
   } else {
-    // エラー
     throw Exception('Issues取得に失敗しました。');
   }
 }
@@ -97,12 +97,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
+          // タブ追加ボタン
           IconButton(
             icon: Icon(Icons.add),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) {
+                  // ダイアログを表示
                   return AlertDialog(
                     title: Text('新しいラベルを入力してください'),
                     content: TextField(
@@ -130,12 +132,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             },
           ),
         ],
-        // ラベル追加ボタン
-
         bottom: TabBar(
           controller: _tabController,
           tabs: _tabs.map((t) {
-            // 表題の指定を確認
+            // 表題の有無を確認
             if (t.containsKey('title') == true) {
               return Tab(text: t['title']); //表題ありはtitleを指定
             } else {
@@ -160,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 }
 
-// 各タブのウィジェット
+// 各タブページのウィジェット
 class TabPage extends StatefulWidget {
   final String query;
 
@@ -261,7 +261,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 ),
               ],
             ),
-            // 状態アイコンとタイトル
+            // 状態アイコン(open or closed)とタイトル
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
