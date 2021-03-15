@@ -19,7 +19,7 @@ Future<dynamic> fetchIssues(String query) async {
     return json.decode(response.body);
   } else {
     // エラー
-    throw Exception('Failed to load album');
+    throw Exception('Issues取得に失敗しました。');
   }
 }
 
@@ -191,7 +191,11 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
     return FutureBuilder<dynamic>(
       future: _issues,
       builder: (context, snapshot) {
-        // 取得判定
+        // 待機中
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator()); // 待機中
+        }
+        // リクエストの取得・エラー判定
         if (snapshot.hasData) {
           // リストビューでアイテムを表示
           return ListView.builder(
@@ -205,9 +209,10 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
             itemCount: snapshot.data.length,
           );
         } else if (snapshot.hasError) {
-          return Text("${snapshot.error}");
+          return Text("${snapshot.error}"); // Error時 Status:200 以外
+        } else {
+          return Text("None");
         }
-        return CircularProgressIndicator();
       },
     );
   }
