@@ -51,47 +51,36 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   TabController _tabController;
   TextEditingController _textEditingController;
 
-  // 初期のタブバー (タイトル)
-  List<String> _titles = [
-    '全て',
-    'p: webview',
-    'p: shared_preferences',
-    'waiting for customer response',
-    'severe: new feature',
-    'p: share',
+  // タブの表題とlabelを管理
+  List<Map<String, String>> _tabs = [
+    {'title': '全て', 'query': ''},
+    {'query': 'p: webview'},
+    {'query': 'p: shared_preferences'},
+    {'query': 'waiting for customer response'},
+    {'query': 'severe: new feature'},
+    {'query': 'p: share'},
   ];
 
-  // タブタイトルに相当するクエリー
-  List<String> _queries = [
-    '',
-    'p: webview',
-    'p: shared_preferences',
-    'waiting for customer response',
-    'severe: new feature',
-    'p: share',
-  ];
-
-  // コントローラーと各種リストを更新
+  // 入力ラベルをもとにタブを追加
   void _addTab(String label) {
     setState(() {
-      _titles.add(label);
-      _queries.add(label);
-      _tabController = _createNewTabController();
-      _textEditingController = TextEditingController();
+      _tabs.add({'query': label}); // labelをリストに追加
+      _tabController = _createNewTabController(); // TabBarの更新
+      _textEditingController = TextEditingController(); // ダイアログのテキスト更新
     });
   }
 
   // コントローラの設定用
   TabController _createNewTabController() => TabController(
         vsync: this,
-        length: _titles.length,
+        length: _tabs.length,
       );
 
   // 各種の初期化
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _titles.length, vsync: this);
+    _tabController = TabController(length: _tabs.length, vsync: this);
     _textEditingController = TextEditingController();
   }
 
@@ -145,11 +134,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
         bottom: TabBar(
           controller: _tabController,
-          tabs: _titles
-              .map(
-                (t) => Tab(text: t),
-              )
-              .toList(),
+          tabs: _tabs.map((t) {
+            // 表題の指定を確認
+            if (t.containsKey('title') == true) {
+              return Tab(text: t['title']); //表題ありはtitleを指定
+            } else {
+              return Tab(text: t['query']); // 表題なしはqueryを指定
+            }
+          }).toList(),
           isScrollable: true,
           unselectedLabelStyle: TextStyle(fontSize: 12.0),
           labelStyle: TextStyle(fontSize: 16.0),
@@ -158,9 +150,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       ),
       body: TabBarView(
         controller: _tabController,
-        children: _queries
+        children: _tabs
             .map(
-              (q) => TabPage(query: q),
+              (t) => TabPage(query: t['query']),
             )
             .toList(),
       ),
@@ -168,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 }
 
-// タブの中身
+// 各タブのウィジェット
 class TabPage extends StatefulWidget {
   final String query;
 
@@ -181,6 +173,9 @@ class TabPage extends StatefulWidget {
   _TabPageState createState() => _TabPageState();
 }
 
+/// サブツリーのstateを保持するmixinを使用
+/// 各タブの読み込み時にAPIを叩く
+/// stateを保持するため、initState()実行済みはそのstateを利用
 class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   Future<dynamic> _issues;
 
