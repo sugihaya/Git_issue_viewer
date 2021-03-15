@@ -15,11 +15,11 @@ Future<dynamic> fetchIssues(String query) async {
     'state': 'all',
   });
   final response = await http.get(url);
+  // エラーチェック
   if (response.statusCode == 200) {
     return json.decode(response.body);
   } else {
-    // エラー
-    throw Exception('Failed to load album');
+    throw Exception('Issues取得に失敗しました。');
   }
 }
 
@@ -66,7 +66,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     setState(() {
       _tabs.add({'query': label}); // labelをリストに追加
       _tabController = _createNewTabController(); // TabBarの更新
-      _textEditingController = TextEditingController(); // ダイアログのテキスト更新
+      _textEditingController = TextEditingController(); // ダイアログテキストのリセット
+      _tabController.animateTo(_tabs.length - 1); // 追加したタブへ移動
     });
   }
 
@@ -97,12 +98,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
+          // タブ追加ボタン
           IconButton(
             icon: Icon(Icons.add),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) {
+                  // ダイアログを表示
                   return AlertDialog(
                     title: Text('新しいラベルを入力してください'),
                     content: TextField(
@@ -130,12 +133,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             },
           ),
         ],
-        // ラベル追加ボタン
-
         bottom: TabBar(
           controller: _tabController,
           tabs: _tabs.map((t) {
-            // 表題の指定を確認
+            // 表題の有無を確認
             if (t.containsKey('title') == true) {
               return Tab(text: t['title']); //表題ありはtitleを指定
             } else {
@@ -160,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 }
 
-// 各タブのウィジェット
+// 各タブページのウィジェット
 class TabPage extends StatefulWidget {
   final String query;
 
@@ -191,7 +192,11 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
     return FutureBuilder<dynamic>(
       future: _issues,
       builder: (context, snapshot) {
-        // 取得判定
+        // 待機中
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator()); // 待機中
+        }
+        // リクエストの取得・エラー判定
         if (snapshot.hasData) {
           // リストビューでアイテムを表示
           return ListView.builder(
@@ -205,9 +210,10 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
             itemCount: snapshot.data.length,
           );
         } else if (snapshot.hasError) {
-          return Text("${snapshot.error}");
+          return Text("${snapshot.error}"); // Error時 Status:200 以外
+        } else {
+          return Text("None");
         }
-        return CircularProgressIndicator();
       },
     );
   }
@@ -256,7 +262,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 ),
               ],
             ),
-            // 状態アイコンとタイトル
+            // 状態アイコン(open or closed)とタイトル
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
