@@ -66,7 +66,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     setState(() {
       _tabs.add({'query': label}); // labelをリストに追加
       _tabController = _createNewTabController(); // TabBarの更新
-      _textEditingController = TextEditingController(); // ダイアログのテキスト更新
+      _textEditingController = TextEditingController(); // ダイアログテキストのリセット
+      _tabController.animateTo(_tabs.length - 1); // 追加したタブへ移動
     });
   }
 
