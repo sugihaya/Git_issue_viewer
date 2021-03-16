@@ -9,6 +9,8 @@ Appbar上のボタンを押すとダイアログが表示される。
 
 <img width="250" alt="スクリーンショット 2021-03-15 19 14 13" src="https://user-images.githubusercontent.com/33017476/111137879-a72fa800-85c2-11eb-8521-be0d4b003a0a.png">
 
+任意のlabelを指定したissues検索が可能に。
+
 <img width="250" alt="スクリーンショット 2021-03-15 18 02 43" src="https://user-images.githubusercontent.com/33017476/111137914-b31b6a00-85c2-11eb-8441-02eaa842b3f5.png">
 
 ## Getting Started
