@@ -7,15 +7,17 @@ void main() {
   runApp(MyApp());
 }
 
-// Issuesを取得 List?
+/// GitHub APIのIssuesを取得する関数
+/// カスタムオブジェクトIssueのリストを返す
 Future<List<Issue>> fetchIssues(String query) async {
   // リクエストポイント
   var url = Uri.https('api.github.com', 'repos/flutter/flutter/issues', {
     'labels': query,
     'state': 'all',
   });
+  // レスポングを取得
   final response = await http.get(url); // 非同期
-  // エラーチェック
+  // エラー検証
   if (response.statusCode == 200) {
     final resJson = json.decode(response.body);
     final issues = resJson.map<Issue>((res) => Issue.fromJson(res)).toList();
@@ -25,13 +27,16 @@ Future<List<Issue>> fetchIssues(String query) async {
   }
 }
 
-//
+/// レスポンスのカスタムクラス
+/// 表示内容変更時に適宜修正
 class Issue {
   final String title; // タイトル
   final String user; // 作成者
-  final String state; // 'Open' or 'Closed' ?
-  final int number;
+  final String state; // 'Open' or 'Closed'
+  final int number; // issueナンバー
   final int comments; // コメント数
+
+  // 変更次第追加
 
   Issue({this.title, this.user, this.state, this.number, this.comments});
 
@@ -100,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         length: _tabs.length,
       );
 
-  // 各種の初期化
+  // 各種コントローラーの初期化
   @override
   void initState() {
     super.initState();
@@ -126,9 +131,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             icon: Icon(Icons.add),
             onPressed: () {
               showDialog(
+                // ダイアログを表示
                 context: context,
                 builder: (context) {
-                  // ダイアログを表示
                   return AlertDialog(
                     title: Text('新しいラベルを入力してください'),
                     content: TextField(
@@ -184,7 +189,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 }
 
-// 各タブページのウィジェット
+/// 各タブページのウィジェット
+/// 初期化時にqueryをもとにAPIリクエストを送る
 class TabPage extends StatefulWidget {
   final String query;
 
@@ -199,14 +205,14 @@ class TabPage extends StatefulWidget {
 
 /// サブツリーのstateを保持するmixinを使用
 /// 各タブの読み込み時にAPIを叩く
-/// stateを保持するため、initState()実行済みはそのstateを利用
+/// stateを保持するため、initState()実行済みはそのstateを再利用
 class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
-  Future<List<Issue>> _issues; //
+  Future<List<Issue>> _issues;
 
   @override
   void initState() {
     super.initState();
-    _issues = fetchIssues(widget.query);
+    _issues = fetchIssues(widget.query); // GitHub APIでissuesを取得
   }
 
   @override
@@ -244,7 +250,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  // issueのstateによって返すアイコンを切り替える
+  /// issueのstateによって返すアイコンを切り替えるメソッド
   Icon _switchIssueIcon(String state) {
     if (state == 'open') {
       return Icon(
@@ -264,15 +270,16 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
     }
   }
 
-  // issueを表示するウィジェット
+  /// issueを表示するカードウィジェットを返すメソッド
+  /// リスト管理されたIssueオブジェクト一つ一つを描画
   Widget _createIssueCard(Issue issue) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            // issueナンバーとコメント数
             Row(
+              // issueナンバーとコメント数
               children: [
                 Text('No.' + issue.number.toString()),
                 SizedBox(width: 20), // 余白用
@@ -284,8 +291,8 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 ),
               ],
             ),
-            // 状態アイコン(open or closed)とタイトル
             Padding(
+              // 状態アイコン(open or closed)とタイトル
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
@@ -309,8 +316,8 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 ],
               ),
             ),
-            // 作成者
             Wrap(
+              // 作成者
               children: [
                 Text('created by ' + issue.user),
               ],
