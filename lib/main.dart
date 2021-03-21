@@ -8,18 +8,41 @@ void main() {
 }
 
 // Issuesを取得 List?
-Future<dynamic> fetchIssues(String query) async {
+Future<List<Issue>> fetchIssues(String query) async {
   // リクエストポイント
   var url = Uri.https('api.github.com', 'repos/flutter/flutter/issues', {
     'labels': query,
     'state': 'all',
   });
-  final response = await http.get(url);
+  final response = await http.get(url); // 非同期
   // エラーチェック
   if (response.statusCode == 200) {
-    return json.decode(response.body);
+    final resJson = json.decode(response.body);
+    final issues = resJson.map<Issue>((res) => Issue.fromJson(res)).toList();
+    return issues;
   } else {
     throw Exception('Issues取得に失敗しました。');
+  }
+}
+
+//
+class Issue {
+  final String title; // タイトル
+  final String user; // 作成者
+  final String state; // 'Open' or 'Closed' ?
+  final int number;
+  final int comments; // コメント数
+
+  Issue({this.title, this.user, this.state, this.number, this.comments});
+
+  factory Issue.fromJson(Map<String, dynamic> json) {
+    return Issue(
+      title: json['title'],
+      user: json['user']['login'],
+      state: json['state'],
+      number: json['number'],
+      comments: json['comments'],
+    );
   }
 }
 
@@ -178,7 +201,7 @@ class TabPage extends StatefulWidget {
 /// 各タブの読み込み時にAPIを叩く
 /// stateを保持するため、initState()実行済みはそのstateを利用
 class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
-  Future<dynamic> _issues;
+  Future<List<Issue>> _issues; //
 
   @override
   void initState() {
@@ -242,7 +265,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   }
 
   // issueを表示するウィジェット
-  Widget _createIssueCard(Map params) {
+  Widget _createIssueCard(Issue issue) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -251,13 +274,12 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
             // issueナンバーとコメント数
             Row(
               children: [
-                Text('No.' + params['number'].toString()),
+                Text('No.' + issue.number.toString()),
                 SizedBox(width: 20), // 余白用
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                Row(
                   children: [
                     Icon(Icons.comment),
-                    Text(params['comments'].toString()),
+                    Text(issue.comments.toString()),
                   ],
                 ),
               ],
@@ -267,7 +289,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  _switchIssueIcon(params['state']),
+                  _switchIssueIcon(issue.state),
                   SizedBox(
                     width: 10,
                   ),
@@ -275,7 +297,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                     child: Container(
                       width: double.infinity,
                       child: Text(
-                        params['title'],
+                        issue.title,
                         textAlign: TextAlign.left,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -290,7 +312,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
             // 作成者
             Wrap(
               children: [
-                Text('created by ' + params['user']['login']),
+                Text('created by ' + issue.user),
               ],
             ),
           ],
